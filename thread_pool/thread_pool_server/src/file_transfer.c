@@ -1,7 +1,7 @@
 #include "../head/file_transfer.h"
 
 int trans_file(int client_fd, const char * f_name) {
-   
+
     train_t train1;
     memset(&train1, 0, sizeof(train1));
     int ret = 0;
@@ -18,14 +18,14 @@ int trans_file(int client_fd, const char * f_name) {
         //ret=send(client_fd, &has_file, sizeof(has_file), 0);
         printf("file not exists\n");
         return -1;
-        
+
     }
     else {
         //ret=send(client_fd, &has_file, sizeof(has_file), 0);
         printf("check  succeed\n");
     }
     //path
-    
+
     //printf("Path: %s\n", path);
     // send f_name to client
     train1.length = strlen(path);
@@ -73,5 +73,59 @@ int cycle_recv(int fd, void * buf, size_t data_length) {
         }
     }
 
+    return 0;
+}
+
+int file_puts(int client_fd ,char* path){
+    int fd;
+    int dataLen;
+    char buf[1000] ={0};
+    char temp[1024] = {0};
+    cycle_recv(client_fd,&dataLen,sizeof(int));
+
+    //收到-1说明对面输入错误，返回-1
+    if(-1 == dataLen){
+        return -1;
+    }
+
+    cycle_recv(client_fd,buf,dataLen);//接收文件名
+
+    sprintf(temp,"%s/%s",path,buf);//拼接文件存放位置
+
+    fd = open(temp,O_CREAT|O_RDWR,0666);//创建或打开文件
+    ERROR_CHECK(fd,-1,"open");
+
+    //接收文件大小
+    off_t fileSize;
+    off_t downLoadSize = 0;
+    cycle_recv(client_fd,&dataLen,sizeof(int));
+    cycle_recv(client_fd,&fileSize,dataLen);
+    printf("%d %ld\n",dataLen,fileSize);
+
+    //记录下载总时长
+    struct timeval start;
+    struct timeval end;
+    gettimeofday(&start,NULL);
+
+    //接收文件内容
+    while(1){
+        cycle_recv(client_fd,&dataLen,sizeof(int));//接收小火车数据长度信息
+
+        //dataLen == 0 ，文件传输结束
+        if(0 == dataLen){
+            break;
+        }
+        cycle_recv(client_fd,buf,dataLen);//接收小火车中的数据信息
+
+        write(fd,buf,dataLen);//写入到文件
+
+        downLoadSize += dataLen;
+
+    }
+
+    gettimeofday(&end,NULL);
+    printf("cost time=%ld\n", (end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec);
+
+    close(fd);
     return 0;
 }

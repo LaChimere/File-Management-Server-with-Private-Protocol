@@ -9,7 +9,7 @@ CMD_T get_cmd_type(char ** cmd_list, const char * cmd) {
             return (CMD_T) i;
         }
     }
-    
+
     return INVALID;
 }
 
@@ -29,6 +29,7 @@ int analyze_cmd(char * cmd, int fd) {
         cmd_ls(fd, cmd);
         break;
     case PUTS:
+        cmd_puts(fd,cmd);
         break;
     case GETS:
         for(int j=4;j<strlen(cmd);++j){
@@ -89,6 +90,24 @@ int cmd_ls(int fd, const char * cmd) {
 
     return 0;
 }
+
+int cmd_puts(int fd,const char * buf){
+    train_t train;
+    memset(&train, 0, sizeof(train));
+
+    //发送cmd
+    train.length = strlen(buf);
+    memcpy(train.buf, buf, strlen(buf));
+    send(fd, &train, sizeof(train.length) + train.length, 0);
+
+
+    char cmd[100] = {0};
+    char filename[100] = {0};
+    sscanf(buf,"%s%s",cmd,filename);
+    file_puts(fd,filename);
+    return 0;
+}
+
 
 int cmd_rm(int fd, const char * cmd) {
     int pos = 0;

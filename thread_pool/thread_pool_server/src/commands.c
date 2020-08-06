@@ -24,6 +24,7 @@ int analyze_cmd(pTrain_t pTrain, int fd, char * path, pThread_Pool_t pThread_Poo
         cmd_ls(fd, pTrain->buf, path);
         break;
     case PUTS:
+        file_puts(fd,path);
         break;
     case GETS:
         cmd_gets(fd, pTrain->buf);
@@ -102,6 +103,8 @@ int cmd_ls(int fd, char * cmd, char * path) {
     }
 
     // 结束信号
+    /* puts("ls finish"); */
+    fflush(stdout);
     send(fd, "end", 4, 0);
 
     closedir(dirp);
